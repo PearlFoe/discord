@@ -1,0 +1,144 @@
+19:22:12:840373, 2021-7-8 - DEBUG - MainThread - Got settings from config file.
+19:22:12:840373, 2021-7-8 - DEBUG - MainThread - Got proxies quantity.
+19:22:14:260975, 2021-7-8 - DEBUG - MainThread - Got accounts from file.
+19:22:14:260975, 2021-7-8 - DEBUG - MainThread - Got proxies from file.
+19:22:17:589040, 2021-7-8 - DEBUG - MainThread - Web driver was created successfully.
+19:22:27:726620, 2021-7-8 - DEBUG - MainThread - Page loaded successfully.
+19:22:47:537460, 2021-7-8 - INFO - MainThread - Successfully logged in account marriari6766@mail.ru.
+19:22:59:59776, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:22:59:139776, 2021-7-8 - ERROR - MainThread - An error has been caught in function '<module>', process 'MainProcess' (3776), thread 'MainThread' (3292):
+Traceback (most recent call last):
+
+> File "main.py", line 463, in <module>
+    main()
+    -> <function main at 0x000000000484A280>
+
+  File "main.py", line 446, in main
+    make_request(proxies, account, users_to_mail, invite)
+    |            |        |        |              -> '.'
+    |            |        |        -> <generator object get_users_to_mail at 0x0000000004817BA0>
+    |            |        -> {'email': 'marriari6766@mail.ru', 'password': 'abnm5lq3jsomi', 'token': 'ODU2MzkwMTg1NTY1OTQ1ODU3.YNAVpw.rT-EV4lgLFTSj7PZN5yO...
+    |            -> <generator object get_proxy at 0x0000000004683350>
+    -> <function make_request at 0x000000000484A040>
+
+  File "main.py", line 382, in make_request
+    if send_message(driver, user_name):
+       |            |       -> 'PearlFoe'
+       |            -> <seleniumwire.webdriver.Chrome (session="8fc896f158905ad5db843155b7f83e24")>
+       -> <function send_message at 0x0000000004841E50>
+
+  File "main.py", line 139, in send_message
+    print(nav_bar_data[-1].find_elements_by_xpath('./div/div/div').get_attribute('aria-label'))
+          -> [<selenium.webdriver.remote.webelement.WebElement (session="8fc896f158905ad5db843155b7f83e24", element="bb89d19d-254f-41f1-b6...
+
+AttributeError: 'list' object has no attribute 'get_attribute'
+19:23:12:619097, 2021-7-8 - DEBUG - MainThread - Got settings from config file.
+19:23:12:619097, 2021-7-8 - DEBUG - MainThread - Got proxies quantity.
+19:23:14:778708, 2021-7-8 - DEBUG - MainThread - Got accounts from file.
+19:23:14:778708, 2021-7-8 - DEBUG - MainThread - Got proxies from file.
+19:23:17:667963, 2021-7-8 - DEBUG - MainThread - Web driver was created successfully.
+19:23:30:5669, 2021-7-8 - DEBUG - MainThread - Page loaded successfully.
+19:23:47:212633, 2021-7-8 - INFO - MainThread - Successfully logged in account marriari6766@mail.ru.
+19:23:52:787839, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:23:52:897839, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:24:41:831848, 2021-7-8 - DEBUG - MainThread - Got settings from config file.
+19:24:41:831848, 2021-7-8 - DEBUG - MainThread - Got proxies quantity.
+19:24:47:772188, 2021-7-8 - DEBUG - MainThread - Got accounts from file.
+19:24:47:773188, 2021-7-8 - DEBUG - MainThread - Got proxies from file.
+19:24:59:238843, 2021-7-8 - DEBUG - MainThread - Web driver was created successfully.
+19:25:13:99636, 2021-7-8 - DEBUG - MainThread - Page loaded successfully.
+19:25:30:666426, 2021-7-8 - INFO - MainThread - Successfully logged in account marriari6766@mail.ru.
+19:25:39:691660, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:25:39:833664, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:25:54:918157, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:25:54:918157, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:25:59:919567, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:25:59:981967, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:26:15:274438, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:26:15:274438, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:26:20:275254, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:26:20:380855, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:26:35:494239, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:26:35:494239, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:26:40:496309, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:26:40:558709, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:26:55:773948, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:26:55:775948, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:27:0:792670, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:27:0:870670, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:27:16:10637, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:27:16:10637, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:27:21:26048, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:27:21:88448, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:27:36:353849, 2021-7-8 - INFO - MainThread - Input field was not found.
+19:27:36:353849, 2021-7-8 - INFO - MainThread - Message was not sent.
+19:27:41:355665, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:27:41:419065, 2021-7-8 - INFO - MainThread - Exception occured trying to open chat with user.
+19:27:56:917626, 2021-7-8 - DEBUG - MainThread - Got settings from config file.
+19:27:56:917626, 2021-7-8 - DEBUG - MainThread - Got proxies quantity.
+19:27:58:213428, 2021-7-8 - DEBUG - MainThread - Got accounts from file.
+19:27:58:213428, 2021-7-8 - DEBUG - MainThread - Got proxies from file.
+19:28:1:529677, 2021-7-8 - DEBUG - MainThread - Web driver was created successfully.
+19:28:14:32393, 2021-7-8 - DEBUG - MainThread - Page loaded successfully.
+19:28:33:252759, 2021-7-8 - INFO - MainThread - Successfully logged in account marriari6766@mail.ru.
+19:29:11:652647, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:29:12:47670, 2021-7-8 - ERROR - MainThread - An error has been caught in function '<module>', process 'MainProcess' (4512), thread 'MainThread' (852):
+Traceback (most recent call last):
+
+> File "main.py", line 465, in <module>
+    main()
+    -> <function main at 0x000000000484A280>
+
+  File "main.py", line 448, in main
+    make_request(proxies, account, users_to_mail, invite)
+    |            |        |        |              -> '.'
+    |            |        |        -> <generator object get_users_to_mail at 0x0000000004816EB0>
+    |            |        -> {'email': 'marriari6766@mail.ru', 'password': 'abnm5lq3jsomi', 'token': 'ODU2MzkwMTg1NTY1OTQ1ODU3.YNAVpw.rT-EV4lgLFTSj7PZN5yO...
+    |            -> <generator object get_proxy at 0x0000000004683B30>
+    -> <function make_request at 0x000000000484A040>
+
+  File "main.py", line 384, in make_request
+    if send_message(driver, user_name):
+       |            |       -> 'PearlFoe'
+       |            -> <seleniumwire.webdriver.Chrome (session="745b57e5cc790967e3d06d287f32673e")>
+       -> <function send_message at 0x0000000004841E50>
+
+  File "main.py", line 169, in send_message
+    while not user_button.location_once_scrolled_into_view:
+              -> None
+
+AttributeError: 'NoneType' object has no attribute 'location_once_scrolled_into_view'
+19:30:8:417305, 2021-7-8 - DEBUG - MainThread - Got settings from config file.
+19:30:8:417305, 2021-7-8 - DEBUG - MainThread - Got proxies quantity.
+19:30:9:476913, 2021-7-8 - DEBUG - MainThread - Got accounts from file.
+19:30:9:476913, 2021-7-8 - DEBUG - MainThread - Got proxies from file.
+19:30:12:725973, 2021-7-8 - DEBUG - MainThread - Web driver was created successfully.
+19:30:25:634711, 2021-7-8 - DEBUG - MainThread - Page loaded successfully.
+19:30:46:155824, 2021-7-8 - INFO - MainThread - Successfully logged in account marriari6766@mail.ru.
+19:30:53:301182, 2021-7-8 - DEBUG - MainThread - Got message text from file.
+19:30:53:721199, 2021-7-8 - ERROR - MainThread - An error has been caught in function '<module>', process 'MainProcess' (3744), thread 'MainThread' (1740):
+Traceback (most recent call last):
+
+> File "main.py", line 465, in <module>
+    main()
+    -> <function main at 0x000000000484A280>
+
+  File "main.py", line 448, in main
+    make_request(proxies, account, users_to_mail, invite)
+    |            |        |        |              -> '.'
+    |            |        |        -> <generator object get_users_to_mail at 0x0000000004816BA0>
+    |            |        -> {'email': 'marriari6766@mail.ru', 'password': 'abnm5lq3jsomi', 'token': 'ODU2MzkwMTg1NTY1OTQ1ODU3.YNAVpw.rT-EV4lgLFTSj7PZN5yO...
+    |            -> <generator object get_proxy at 0x0000000004683350>
+    -> <function make_request at 0x000000000484A040>
+
+  File "main.py", line 384, in make_request
+    if send_message(driver, user_name):
+       |            |       -> 'PearlFoe'
+       |            -> <seleniumwire.webdriver.Chrome (session="5d1d9ea6aae5b4e56a1396a393b39ccb")>
+       -> <function send_message at 0x0000000004841E50>
+
+  File "main.py", line 169, in send_message
+    while not user_button.location_once_scrolled_into_view:
+              -> None
+
+AttributeError: 'NoneType' object has no attribute 'location_once_scrolled_into_view'

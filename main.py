@@ -11,6 +11,7 @@ from loguru import logger
 from requests.exceptions import SSLError
 
 import threading
+import datetime
 import random
 import time
 import json
@@ -23,157 +24,229 @@ logger.add('main_log_file.log', format="<green>{time.hour}:{time.minute}:{time.s
 
 def get_blacklist(file_name):
 	data = None
-	with open(file_name, encoding='utf-8') as f:
-		data = f.read()
-
 	try:
-		return data.split('\n')
+		with open(file_name, encoding='utf-8') as f:
+			data = f.read()
 	except Exception:
 		return []
+	else:
+		logger.debug('Got profiles from blacklist.')
+		return [i for i in data.split('\n') if i]
 
 def dump_blacklist(file_name, data):
-	with open(file_name, 'w') as f:
-		f.write(data)
+	try:
+		with open(file_name, 'w') as f:
+			f.write('\n'.join(data))
+	except Exception:
+		logger.warning('Failed to dump profiles to blacklist.')
+	else:
+		logger.debug('Dumped profiles to blacklist.')
 
 def get_config(file_name):
 	data = None
-	with open(file_name) as f:
-		data = json.loads(f.read())
+	try:
+		with open(file_name) as f:
+			data = json.loads(f.read())
+	except FileNotFoundError:
+		logger.error('Failed to open config file.')
+		exit()
+	else:
+		logger.debug('Got settings from config file.')
 
 	return data
 
 def get_proxy(file_name):
 	data = None
-	with open(file_name) as f:
-		data = f.read()
-
-	for proxy in data.split('\n'):
-		yield proxy
+	try:
+		with open(file_name) as f:
+			data = f.read()
+	except FileNotFoundError:
+		logger.error(f'Failed to open file with proxies {file_name}.')
+	else:
+		logger.debug('Got proxies from file.')
+		for proxy in data.split('\n'):
+			yield proxy
 
 def get_proxy_count(file_name):
 	data = None
-	with open(file_name) as f:
-		data = f.read()
-
-	return len(data.split('\n'))
+	try:
+		with open(file_name) as f:
+			data = f.read()
+	except FileNotFoundError:
+		logger.error(f'Failed to open file with proxies {file_name}.')
+	else:
+		logger.debug('Got proxies quantity.')
+		return len(data.split('\n'))
 
 def get_accounts(file_name):
 	data = None
-	with open(file_name) as f:
-		data = f.read()
+	try:
+		with open(file_name) as f:
+			data = f.read()
+	except FileNotFoundError:
+		logger.error(f'Failed to get accounts from file {file_name}.')
+	else:
+		logger.debug('Got accounts from file.')
+		accounts = []
+		for i in data.split('\n'):
+			account = i.split(':')
+			accounts.append({
+				'email':account[0],
+				'password':account[1],
+				'token':account[2]
+			})
 
-	accounts = []
-	for i in data.split('\n'):
-		account = i.split(':')
-		accounts.append({
-			'email':account[0],
-			'password':account[1],
-			'token':account[2]
-		})
-
-	for account in accounts:
-		yield account
+		for account in accounts:
+			yield account
 
 def get_users_to_mail(file_name):
 	data = None
-	with open(file_name) as f:
-		data = f.read()
-
-	for user in data.split('\n'):
-		yield user
-
-def locate_url(part_url, driver):
-	start_time = time.time()
-	while True:
-		if part_url in driver.current_url:
-			return True
-		else:
-			if time.time() - start_time > 15:
-				return False
+	try:
+		with open(file_name, encoding="Windows-1251") as f:
+			data = f.read()
+	except FileNotFoundError:
+		logger.error(f'Failed to get users to mail from file {file_name}.')
+	else:
+		logger.debug('Got users to mail from file.')
+		for user in data.split('\n'):
+			yield user
 
 def get_message_text(file_name):
 	data = None
-	with open(file_name, encoding='utf-8') as f:
-		data = f.read()
-
-	return data
+	try:
+		with open(file_name, encoding='Windows-1251') as f:
+			data = f.read()
+	except FileNotFoundError:
+		logger.error(f'Failed to get message text from file {file_name}.')
+	else:
+		logger.debug('Got message text from file.')
+		assert data
+		return data
 
 def send_message(driver, user):
-	actions = ActionChains(driver)
-
 	message = get_message_text('message.txt')
 	if not message:
 		logger.info('Empty message.')
 		return False
+	
+	user_button = None
+	nav_bar = None
+	#try:
+	url = driver.current_url
+	chanel_id = int(url.split('/')[-1])
+	nav_bar = driver.find_element_by_xpath(f'//div[@id="members-{chanel_id}"]')
+	nav_bar_data = nav_bar.find_elements_by_xpath('./div/div')
 
-	try:
-		user_chat = driver.find_element_by_xpath(f'//a[@aria-label="{user} (личное сообщение)"]')
-	except Exception:
-		logger.info(f'Chat with user {user} was not found.')
-	else:
-		actions.click(user_chat).perform()
-		del actions
-
-	input_field = None
-	try:
-		_ = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
-												(By.XPATH, f'//div[@aria-label="Написать @{user}"]')))
-		input_field = driver.find_element_by_xpath(f'//div[@aria-label="Написать @{user}"]')
-	except Exception:
-		pass
-
-	for _ in range(3):
+	#n = nav_bar_data[-1].find_element_by_xpath('./div/div/div').get_attribute('aria-label').split(',')[0]
+	#print(user, n, user==n)
+	
+	for i in nav_bar_data:
 		try:
-			actions = ActionChains(driver)
-			actions.click(input_field)
-			actions.pause(0.25)
-			actions.perform()
-
-			input_field.send_keys(message)
-			input_field.send_keys(Keys.ENTER)
+			_ = i.find_element_by_xpath('.//*[contains(text(), "{user}")]')
+			#el = i.find_element_by_xpath('./div/div/div').get_attribute('innerHTML')
+			print(el, user)
+			if name in el:
+				user_button = i
+		
 		except Exception:
 			pass
 		else:
-			logger.debug(f'Message was sent successfully to user {user}.')
-			return True
+			#user_button = i
+			#break
+			pass
+	
+	print(user_button)
+	#except Exception:
+		#logger.info('Unnable to get users from navigation bar.')
+
+	#clicking user button
+	#try:
+	actions = ActionChains(driver)
+
+	actions.move_to_element_with_offset(nav_bar, 20, 0)
+	actions.perform()
+
+	while not user_button.location_once_scrolled_into_view:
+		driver.execute_script('window.scrollTo(0, Y)')
+
+	actions.reset_actions()
+	actions.click(user_button)
+	actions.perform()
+	#except Exception:
+		#logger.info('Exception occured trying to locate and click user button.')
+	
+	try:
+		#clicking personal photo to get to profile
+		photo_btn = driver.find_element_by_xpath(f'//div[@aria-label={user}]/div[@role="button"]')	
+		actions = ActionChains(driver)
+		actions.click(photo_btn)
+		actions.perform()
+		actions.reset_actions()
+
+		#from profile opening chat
+		user_chat = driver.find_element_by_xpath('//div[@aria-label="Интерфейс профиля пользователя"]//button[@type="button"]') #!!!!!!!!!
+		actions.click(user_chat)
+		actions.perform()
+	except Exception:
+		logger.info('Exception occured trying to open chat with user.')
+
+	'''
+	try:
+		user_chat = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+													(By.XPATH, f'//div[@id="private-channels"]/div/a[@aria-label="{user} (личное сообщение)"] \
+																| //div[@id="private-channels"]/div/a[@aria-label="{user} (direct message)"]')))
+	except Exception:
+		logger.info(f'Chat with user {user} was not found.')
+	else:
+		url = user_chat.get_attribute('href')
+		driver.get(url)
+	'''
+
+	##################################################
+	try:
+		input_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
+												(By.XPATH, f'//div[@aria-label="Написать @{user}"] | //div[@aria-label="Message @{user}"]')))
+	except Exception:
+		logger.info('Input field was not found.')
+	else:
+		for _ in range(3):
+			#checking flood alert
+			try:
+				flood_warning = driver.find_element_by_xpath('//*[contains(text(), "You are sending")]')
+			except Exception:
+				pass
+			else:
+				time_to_sleep = config['TIME_OUT']
+				logger.info(f'Got flood alert. Waiting {time_to_sleep} seconds.')
+				time.sleep(time_to_sleep)
+
+			try:
+				actions = ActionChains(driver)
+				actions.click(input_field)
+				actions.pause(0.25)
+				actions.perform()
+
+				input_field.send_keys(message)
+				input_field.send_keys(Keys.ENTER)
+			except Exception:
+				pass
+			else:
+				logger.info(f'Message was sent successfully to user {user}.')
+
+				global messages_sent
+				messages_sent += 1
+
+				return True
 
 	logger.info('Message was not sent.')
 	return False
-
-def make_request(proxies, account, users_to_mail, invite):
-	tread_name = threading.current_thread().name
 	
-	options = Options()
-	options.add_experimental_option('excludeSwitches', ['enable-logging']) #disables webdriver loggs
-
-	proxy = next(proxies)
-	seleniumwire_options = {
-		'proxy': {
-			'http': f'http://{proxy}', 
-			'https': f'https://{proxy}',
-		}
-	}
-
-	if config['HEADLESS_MODE']:
-		options.add_argument("--headless")
-
-	#driver initialisation
-	driver = None
-	try:
-		#driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=options)
-		driver = webdriver.Chrome(options=options) #without proxy
-	except SSLError:
-		logger.error('An error occured during driver creation.')
-		return
-	else:
-		logger.debug('Web driver was created successfully.')
-		#driver.set_page_load_timeout(15)
-
+def login(driver, account):
 	try:
 		driver.get('https://discord.com/login')
 	except Exception:
-		logger.error('An error occured during page loading.')
-		return
+		logger.error('An error occured during login page loading.')
+		return False
 	else:
 		logger.debug('Page loaded successfully.')
 		time.sleep(2)
@@ -196,15 +269,17 @@ def make_request(proxies, account, users_to_mail, invite):
 		driver.execute_script(script)
 		
 		#waiting pop up message that indicates successful log in
-		_ = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
+		_ = WebDriverWait(driver, 30).until(EC.presence_of_element_located(
 													(By.XPATH, '//div[@id="popout_3"]')))
 	except Exception:
 		logger.error('An error occured trying to log in.')
-		return
+		return False
 	else:
 		email = account['email']
 		logger.info(f'Successfully logged in account {email}.')
+		return True
 
+def enter_chanel_by_invite(driver, invite):
 	try:
 		driver.get(invite)
 		_ = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
@@ -215,21 +290,85 @@ def make_request(proxies, account, users_to_mail, invite):
 		del actions
 	except Exception:
 		logger.error('An error occured trying to use invite.')
-		return
+		driver.quit()
+		return False
 
 	try:
 		_ = WebDriverWait(driver, 2).until(EC.presence_of_element_located(
 											(By.XPATH, '//div[contains(text(), "Continue to Discord")] \
 												| //div[contains(text(), "Accept Invite")]')))
 	except Exception:
-		driver.get('https://discord.com/channels/@me')
+		#driver.get('https://discord.com/channels/@me')
+		pass
 	else:
 		logger.info('Invalid invite or account is in ban.')
-		return
+		driver.quit()
+		return False
 
+	return True
+
+def make_request(proxies, account, users_to_mail, invite):
+	global accounts_used
+	accounts_used += 1
+
+	tread_name = threading.current_thread().name
+	
+	options = Options()
+	options.add_experimental_option('excludeSwitches', ['enable-logging']) #disables webdriver loggs
+
+	proxy = next(proxies)
+	seleniumwire_options = {
+		'proxy': {
+			'http': f'http://{proxy}', 
+			'https': f'https://{proxy}',
+		}
+	}
+
+	if config['HEADLESS_MODE']:
+		options.add_argument("--headless")
+
+	#driver initialisation
+	driver = None
+	try:
+		driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=options)
+		#driver = webdriver.Chrome(options=options) #without proxy
+	except SSLError:
+		logger.error('An error occured during driver creation.')
+		try:
+			driver.quit()
+		except Exception:
+			pass
+		return False
+	else:
+		logger.debug('Web driver was created successfully.')
+		#driver.set_page_load_timeout(15)
+
+	#loging into account
+	attempts = 2
+	email = account['email']
+	for i in range(1, attempts+1):
+		if not login(driver, account):
+			if i < attempts:
+				logger.info(f'Retrying to log into account {email}.')
+			else:
+				logger.info(f'Failed to log into account {email} in {attempts} attempts.')
+				driver.quit()
+				return False
+		else:
+			break
+
+
+	_ = input('-----')
+	'''
+	#trying to use invite
+	if not enter_chanel_by_invite(driver, invite):
+		return False
+	'''
+	#choosing user to send message
 	while True:
 		blacklist = get_blacklist('blacklist.txt')
-		user_name = None
+		user_name = 'PearlFoe'
+		'''
 		try:
 			user_name = next(users_to_mail)
 			while True:
@@ -238,29 +377,63 @@ def make_request(proxies, account, users_to_mail, invite):
 				else:
 					break
 		except StopIteration:
-			logger.error('Got the end of "user_to_mail.txt" file.')
-			return
-
+			logger.warning('Got the end of users to mail list.')
+			driver.quit()
+			return False
+		'''
 		if send_message(driver, user_name):
 			blacklist.append(user_name)
 			dump_blacklist('blacklist.txt', blacklist)
 
+		time_out_between_messages = config['TIME_OUT_BETWEEN_MESSAGES']
+		time.sleep(time_out_between_messages)
+
+	time_out = config['TIME_OUT']
+	time.sleep(time_out)
+
 	_ = input('--------------')
 	driver.quit()
+
+def get_statistics(file_name):
+	data = None
+	try:
+		with open(file_name) as f:
+			data = json.loads(f.read())
+	except Exception:
+		return []
+	else:
+		logger.debug('Statistics loaded from file successfully.')
+		return data
+
+def dump_statistics(file_name, data):
+	stats = get_statistics(file_name)
+	try:
+		stats.append(data)
+		with open(file_name, 'w') as f:
+			json.dump(stats, f)
+	except Exception:
+		logger.warning(f'Failed to dump statistics to file {file_name}.')
+	else:
+		logger.debug('Statistics umped to file successfully.')
 
 @logger.catch
 def main():
 	global config
+	global messages_sent
+	global accounts_banned
+	global accounts_used
+
+	messages_sent = accounts_banned = accounts_used = 0
+
 	config = get_config('config.json')
 	proxies = get_proxy('proxy.txt')
 	proxy_count = get_proxy_count('proxy.txt')
 	accounts = get_accounts('accounts.txt')
-	users_to_mail = None
+	users_to_mail = get_users_to_mail('users_to_mail.txt')
 
+	#getting invite url from user
 	invite = input('Enter invite url: ') #https://discord.gg/PT5kfeQ6
-	#next(accounts)
-	make_request(proxies, next(accounts), users_to_mail, invite)
-	'''
+	
 	max_workers = None
 	if proxy_count < config['THREADS_QUANTITY']:
 		max_workers = proxy_count
@@ -268,10 +441,25 @@ def main():
 		max_workers = config['THREADS_QUANTITY']
 
 	with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='Tread') as executor:
-		for account in accounts:
-			executor.submit(make_request, proxies, account, users_to_mail, invite)
-	'''
-	
+		#for account in accounts:
+		account = next(accounts)
+		account = next(accounts)
+		#executor.submit(make_request, proxies, account, users_to_mail, invite)
+		make_request(proxies, account, users_to_mail, invite)
+
+	#saving statistics
+	dt = datetime.datetime.now()
+	stats = {
+		'time': str(dt.time()),
+		'date': str(dt.date()),
+		'threads': max_workers,
+		'messages_successfilly_sent':messages_sent,
+		'accounts_banned': accounts_banned,
+		'accounts_used': accounts_used,
+		'avarage_messages_sent': int(messages_sent/accounts_used)
+	}
+
+	dump_statistics('statistics.json', stats)
 
 if __name__ == '__main__':
 	main()
