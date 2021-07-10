@@ -131,81 +131,72 @@ def send_message(driver, user):
 	
 	user_button = None
 	nav_bar = None
-	#try:
-	url = driver.current_url
-	chanel_id = int(url.split('/')[-1])
-	nav_bar = driver.find_element_by_xpath(f'//div[@id="members-{chanel_id}"]')
-	nav_bar_data = nav_bar.find_elements_by_xpath('./div/div')
+	try:
+		url = driver.current_url
+		chanel_id = int(url.split('/')[-1])
+		nav_bar = driver.find_element_by_xpath(f'//div[@id="members-{chanel_id}"]')
+		nav_bar_data = nav_bar.find_elements_by_xpath('./div/div')
 
-	#n = nav_bar_data[-1].find_element_by_xpath('./div/div/div').get_attribute('aria-label').split(',')[0]
-	#print(user, n, user==n)
-	
-	for i in nav_bar_data:
-		try:
-			_ = i.find_element_by_xpath('.//*[contains(text(), "{user}")]')
-			#el = i.find_element_by_xpath('./div/div/div').get_attribute('innerHTML')
-			print(el, user)
-			if name in el:
-				user_button = i
-		
-		except Exception:
-			pass
-		else:
-			#user_button = i
-			#break
-			pass
-	
-	print(user_button)
-	#except Exception:
-		#logger.info('Unnable to get users from navigation bar.')
+		for i in nav_bar_data:
+			try:
+				#_ = i.find_element_by_xpath(f'.//*[starts-with(@aria-label, "{user}") or text()="{user}" or contains(@aria-label, "{user}")]')
+				#el = i.find_element_by_xpath('./div/div/div').get_attribute('innerHTML')
+				el = i.find_element_by_xpath('./div/div/div').get_attribute('aria-label')
+			except Exception:
+				pass
+			else:
+				if user in el:
+					user_button = i
+					break
+				pass
+	except Exception:
+		logger.info('Unnable to get users from navigation bar.')
 
 	#clicking user button
-	#try:
-	actions = ActionChains(driver)
+	try:
+		actions = ActionChains(driver)
 
-	actions.move_to_element_with_offset(nav_bar, 20, 0)
-	actions.perform()
+		actions.move_to_element_with_offset(nav_bar, 20, 0)
+		actions.perform()
 
-	while not user_button.location_once_scrolled_into_view:
-		driver.execute_script('window.scrollTo(0, Y)')
+		while not user_button.location_once_scrolled_into_view:
+			driver.execute_script('window.scrollTo(0, Y)')
 
-	actions.reset_actions()
-	actions.click(user_button)
-	actions.perform()
-	#except Exception:
-		#logger.info('Exception occured trying to locate and click user button.')
-	
+		actions.reset_actions()
+		actions.click(user_button)
+		actions.perform()
+	except Exception:
+		logger.info('Exception occured trying to locate and click user button.')
+	'''
 	try:
 		#clicking personal photo to get to profile
-		photo_btn = driver.find_element_by_xpath(f'//div[@aria-label={user}]/div[@role="button"]')	
+		photo_btn = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+													(By.XPATH, f'//div[@aria-label="{user}"]/div[@role="button"]')))
+
 		actions = ActionChains(driver)
 		actions.click(photo_btn)
 		actions.perform()
-		actions.reset_actions()
+		del actions
 
 		#from profile opening chat
-		user_chat = driver.find_element_by_xpath('//div[@aria-label="Интерфейс профиля пользователя"]//button[@type="button"]') #!!!!!!!!!
+		user_chat = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
+													(By.XPATH, '//div[@aria-label="Интерфейс профиля пользователя" \
+																or @aria-label="User Profile Modal"]//button[@type="button"]')))
+		actions = ActionChains(driver)
+		actions.move_to_element(user_chat)
+		actions.pause(0.2)
 		actions.click(user_chat)
 		actions.perform()
 	except Exception:
 		logger.info('Exception occured trying to open chat with user.')
-
 	'''
 	try:
-		user_chat = WebDriverWait(driver, 10).until(EC.presence_of_element_located(
-													(By.XPATH, f'//div[@id="private-channels"]/div/a[@aria-label="{user} (личное сообщение)"] \
-																| //div[@id="private-channels"]/div/a[@aria-label="{user} (direct message)"]')))
-	except Exception:
-		logger.info(f'Chat with user {user} was not found.')
-	else:
-		url = user_chat.get_attribute('href')
-		driver.get(url)
-	'''
-
-	##################################################
-	try:
+		'''
 		input_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
 												(By.XPATH, f'//div[@aria-label="Написать @{user}"] | //div[@aria-label="Message @{user}"]')))
+		'''
+		input_field = WebDriverWait(driver, 15).until(EC.presence_of_element_located(
+												(By.XPATH, f'//input[@placeholder="Сообщение для @{user}"] | //input[@placeholder="Message @{user}"]')))
 	except Exception:
 		logger.info('Input field was not found.')
 	else:
@@ -267,9 +258,9 @@ def login(driver, account):
 						login('{token}');
 				'''
 		driver.execute_script(script)
-		
+
 		#waiting pop up message that indicates successful log in
-		_ = WebDriverWait(driver, 30).until(EC.presence_of_element_located(
+		_ = WebDriverWait(driver, 45).until(EC.presence_of_element_located(
 													(By.XPATH, '//div[@id="popout_3"]')))
 	except Exception:
 		logger.error('An error occured trying to log in.')
@@ -325,6 +316,7 @@ def make_request(proxies, account, users_to_mail, invite):
 	}
 
 	if config['HEADLESS_MODE']:
+		logger.debug('Driver starts in headless mode.')
 		options.add_argument("--headless")
 
 	#driver initialisation
@@ -342,7 +334,7 @@ def make_request(proxies, account, users_to_mail, invite):
 	else:
 		logger.debug('Web driver was created successfully.')
 		#driver.set_page_load_timeout(15)
-
+	
 	#loging into account
 	attempts = 2
 	email = account['email']
@@ -356,19 +348,16 @@ def make_request(proxies, account, users_to_mail, invite):
 				return False
 		else:
 			break
-
-
-	_ = input('-----')
-	'''
+	
 	#trying to use invite
 	if not enter_chanel_by_invite(driver, invite):
 		return False
-	'''
+	
 	#choosing user to send message
 	while True:
 		blacklist = get_blacklist('blacklist.txt')
 		user_name = 'PearlFoe'
-		'''
+		
 		try:
 			user_name = next(users_to_mail)
 			while True:
@@ -380,10 +369,11 @@ def make_request(proxies, account, users_to_mail, invite):
 			logger.warning('Got the end of users to mail list.')
 			driver.quit()
 			return False
-		'''
+		
 		if send_message(driver, user_name):
 			blacklist.append(user_name)
 			dump_blacklist('blacklist.txt', blacklist)
+			break
 
 		time_out_between_messages = config['TIME_OUT_BETWEEN_MESSAGES']
 		time.sleep(time_out_between_messages)
@@ -441,11 +431,11 @@ def main():
 		max_workers = config['THREADS_QUANTITY']
 
 	with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='Tread') as executor:
-		#for account in accounts:
-		account = next(accounts)
-		account = next(accounts)
-		#executor.submit(make_request, proxies, account, users_to_mail, invite)
-		make_request(proxies, account, users_to_mail, invite)
+		#account = next(accounts)
+		#account = next(accounts)
+		#make_request(proxies, account, users_to_mail, invite)
+		for account in accounts:
+			e = executor.submit(make_request, proxies, account, users_to_mail, invite)
 
 	#saving statistics
 	dt = datetime.datetime.now()
