@@ -5,13 +5,14 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.action_chains import ActionChains
 from selenium.webdriver.chrome.options import Options
-from seleniumwire import webdriver
+from selenium import webdriver
 from loguru import logger
 
 from requests.exceptions import SSLError
 
 import threading
 import datetime
+import zipfile
 import random
 import time
 import json
@@ -102,14 +103,17 @@ def get_accounts(file_name):
 def get_users_to_mail(file_name):
 	data = None
 	try:
-		with open(file_name, encoding="Windows-1251") as f:
+		with open(file_name, encoding="utf-8") as f:
 			data = f.read()
 	except FileNotFoundError:
 		logger.error(f'Failed to get users to mail from file {file_name}.')
 	else:
 		logger.debug('Got users to mail from file.')
 		for user in data.split('\n'):
-			yield user
+			yield {
+					'name': user.split('#')[0],
+					'id': user.split('#')[1]
+			}
 
 def get_message_text(file_name):
 	data = None
@@ -124,6 +128,7 @@ def get_message_text(file_name):
 		return data
 
 def send_message(driver, user):
+	user = user['name']
 	message = get_message_text('message.txt')
 	if not message:
 		logger.info('Empty message.')
@@ -308,12 +313,6 @@ def make_request(proxies, account, users_to_mail, invite):
 	options.add_experimental_option('excludeSwitches', ['enable-logging']) #disables webdriver loggs
 
 	proxy = next(proxies)
-	seleniumwire_options = {
-		'proxy': {
-			'http': f'http://{proxy}', 
-			'https': f'https://{proxy}',
-		}
-	}
 
 	if config['HEADLESS_MODE']:
 		logger.debug('Driver starts in headless mode.')
@@ -322,8 +321,7 @@ def make_request(proxies, account, users_to_mail, invite):
 	#driver initialisation
 	driver = None
 	try:
-		driver = webdriver.Chrome(seleniumwire_options=seleniumwire_options, options=options)
-		#driver = webdriver.Chrome(options=options) #without proxy
+		driver = get_driver(options, proxy)
 	except SSLError:
 		logger.error('An error occured during driver creation.')
 		try:
@@ -406,6 +404,75 @@ def dump_statistics(file_name, data):
 	else:
 		logger.debug('Statistics umped to file successfully.')
 
+def get_driver(options, proxy):
+	PROXY_HOST = proxy.split('@')[1].split(':')[0]
+	PROXY_PORT = proxy.split('@')[1].split(':')[1]
+	PROXY_USER = proxy.split('@')[0].split(':')[0]
+	PROXY_PASS = proxy.split('@')[0].split(':')[1]
+
+	manifest_json = """
+	{
+	    "version": "1.0.0",
+	    "manifest_version": 2,
+	    "name": "Chrome Proxy",
+	    "permissions": [
+	        "proxy",
+	        "tabs",
+	        "unlimitedStorage",
+	        "storage",
+	        "<all_urls>",
+	        "webRequest",
+	        "webRequestBlocking"
+	    ],
+	    "background": {
+	        "scripts": ["background.js"]
+	    },
+	    "minimum_chrome_version":"22.0.0"
+	}
+	"""
+
+	background_js = """
+	var config = {
+	        mode: "fixed_servers",
+	        rules: {
+	        singleProxy: {
+	            scheme: "http",
+	            host: "%s",
+	            port: parseInt(%s)
+	        },
+	        bypassList: ["localhost"]
+	        }
+	    };
+
+	chrome.proxy.settings.set({value: config, scope: "regular"}, function() {});
+
+	function callbackFn(details) {
+	    return {
+	        authCredentials: {
+	            username: "%s",
+	            password: "%s"
+	        }
+	    };
+	}
+
+	chrome.webRequest.onAuthRequired.addListener(
+	            callbackFn,
+	            {urls: ["<all_urls>"]},
+	            ['blocking']
+	);
+	""" % (PROXY_HOST, PROXY_PORT, PROXY_USER, PROXY_PASS)
+
+
+	pluginfile = 'proxy_auth_plugin.zip'
+
+	with zipfile.ZipFile(pluginfile, 'w') as zp:
+		zp.writestr("manifest.json", manifest_json)
+		zp.writestr("background.js", background_js)
+	options.add_extension(pluginfile)
+
+	driver = webdriver.Chrome(options=options)
+	return driver
+
 @logger.catch
 def main():
 	global config
@@ -422,7 +489,7 @@ def main():
 	users_to_mail = get_users_to_mail('users_to_mail.txt')
 
 	#getting invite url from user
-	invite = input('Enter invite url: ') #https://discord.gg/PT5kfeQ6
+	invite = input('Enter invite url: ')
 	
 	max_workers = None
 	if proxy_count < config['THREADS_QUANTITY']:
@@ -430,12 +497,14 @@ def main():
 	else:
 		max_workers = config['THREADS_QUANTITY']
 
+	account = next(accounts)
+	make_request(proxies, account, users_to_mail, invite)
+
+	'''
 	with ThreadPoolExecutor(max_workers=max_workers, thread_name_prefix='Tread') as executor:
-		#account = next(accounts)
-		#account = next(accounts)
-		#make_request(proxies, account, users_to_mail, invite)
 		for account in accounts:
 			e = executor.submit(make_request, proxies, account, users_to_mail, invite)
+	'''	
 
 	#saving statistics
 	dt = datetime.datetime.now()
